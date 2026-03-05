@@ -54,7 +54,7 @@ function Modal({ normativo, onClose, dark }) {
                 background: overlayBg,
                 backdropFilter: "blur(8px)",
                 display: "flex", alignItems: "center", justifyContent: "center",
-                padding: "24px",
+                padding: "16px",
                 animation: "fadeIn 0.15s ease",
             }}
         >
@@ -69,6 +69,8 @@ function Modal({ normativo, onClose, dark }) {
                     position: "relative",
                     boxShadow: shadow,
                     animation: "slideUp 0.2s ease",
+                    maxHeight: "90vh",
+                    overflowY: "auto",
                 }}
             >
                 <button
@@ -85,7 +87,7 @@ function Modal({ normativo, onClose, dark }) {
                     onMouseLeave={e => { e.currentTarget.style.background = closeBg; e.currentTarget.style.color = closeColor; }}
                 >✕</button>
 
-                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px" }}>
+                <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", marginBottom: "20px", paddingRight: "40px" }}>
                     <span style={{
                         fontSize: "10px", fontWeight: "700", letterSpacing: "0.1em",
                         textTransform: "uppercase", padding: "4px 10px", borderRadius: "6px",
@@ -127,6 +129,7 @@ function Modal({ normativo, onClose, dark }) {
                 <div style={{
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     paddingTop: "20px", borderTop: `1px solid ${divider}`,
+                    flexWrap: "wrap", gap: "12px",
                 }}>
                     <span style={{ fontSize: "12px", color: dateColor, fontFamily: "Arial, monospace" }}>
                         {new Date(normativo.data).toLocaleDateString("pt-BR")}
@@ -165,6 +168,7 @@ function StatBadge({ label, value, color, dark }) {
             background: bg,
             border: `1px solid ${border}`,
             borderRadius: "12px", minWidth: "80px",
+            flexShrink: 0,
             transition: "transform 0.15s, box-shadow 0.15s",
             cursor: "default",
         }}
@@ -188,6 +192,15 @@ export default function Home() {
     const [modalItem, setModalItem] = useState(null);
     const [buscaFocused, setBuscaFocused] = useState(false);
     const [dark, setDark] = useState(false);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const check = () => setIsMobile(window.innerWidth < 768);
+        check();
+        window.addEventListener("resize", check);
+        return () => window.removeEventListener("resize", check);
+    }, []);
 
     useEffect(() => {
         async function fetchData() {
@@ -251,7 +264,6 @@ export default function Home() {
         XLSX.writeFile(wb, `monitor-regulatorio-${new Date().toISOString().slice(0, 10)}.xlsx`);
     };
 
-    // Theme tokens
     const t = {
         bg: dark ? "#0B1120" : "#F1F5F9",
         surface: dark ? "#111827" : "#FFFFFF",
@@ -294,7 +306,8 @@ export default function Home() {
             fontFamily: "'Bricolage Grotesque', sans-serif",
             appearance: "none",
             WebkitAppearance: "none",
-            minWidth: "160px",
+            minWidth: isMobile ? "0" : "160px",
+            width: isMobile ? "100%" : "auto",
             transition: "all 0.2s",
             boxShadow: hasValue
                 ? (dark ? "0 0 0 3px rgba(96,165,250,0.1)" : "0 0 0 3px rgba(37,99,235,0.08)")
@@ -318,9 +331,12 @@ export default function Home() {
                 <span style={{ color: t.textMuted, fontSize: "12px", fontFamily: "Arial, monospace", letterSpacing: "0.14em", textTransform: "uppercase" }}>
                     Carregando Monitor...
                 </span>
+                <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
             </div>
         );
     }
+
+    const px = isMobile ? "16px" : "40px";
 
     return (
         <>
@@ -330,16 +346,18 @@ export default function Home() {
                 body { background: ${t.bg}; transition: background 0.3s; }
                 @keyframes fadeIn  { from { opacity: 0 } to { opacity: 1 } }
                 @keyframes slideUp { from { opacity: 0; transform: translateY(16px) } to { opacity: 1; transform: translateY(0) } }
+                @keyframes slideDown { from { opacity: 0; transform: translateY(-8px) } to { opacity: 1; transform: translateY(0) } }
                 @keyframes spin    { to { transform: rotate(360deg) } }
                 @keyframes pulse   { 0%,100% { opacity: 1 } 50% { opacity: 0.55 } }
                 @keyframes cardIn  { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
                 .card-grid > div { animation: cardIn 0.3s ease both; }
                 ${Array.from({ length: 12 }, (_, i) => `.card-grid > div:nth-child(${i + 1}) { animation-delay: ${i * 0.04}s }`).join('\n')}
-                ::-webkit-scrollbar { width: 6px; }
+                ::-webkit-scrollbar { width: 6px; height: 4px; }
                 ::-webkit-scrollbar-track { background: ${t.scrollTrack}; }
                 ::-webkit-scrollbar-thumb { background: ${t.scrollThumb}; border-radius: 3px; }
                 select option { background: ${dark ? "#0f1a2e" : "#fff"}; color: ${t.textSub}; font-family: Arial, monospace; }
                 select:focus { border-color: ${t.borderFocus} !important; box-shadow: 0 0 0 3px ${dark ? "rgba(96,165,250,0.1)" : "rgba(37,99,235,0.08)"} !important; }
+                input::placeholder { color: ${t.textMuted}; }
             `}</style>
 
             <Modal normativo={modalItem} onClose={() => setModalItem(null)} dark={dark} />
@@ -351,7 +369,7 @@ export default function Home() {
                     background: t.headerBg,
                     backdropFilter: "blur(14px)",
                     borderBottom: `1px solid ${t.border}`,
-                    padding: "0 40px",
+                    padding: `0 ${px}`,
                     height: "66px",
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     position: "sticky", top: 0, zIndex: 100,
@@ -370,106 +388,101 @@ export default function Home() {
                             </svg>
                         </div>
                         <div>
-                            <div style={{ fontSize: "15px", fontWeight: "700", color: t.text, letterSpacing: "-0.02em" }}>
+                            <div style={{ fontSize: isMobile ? "13px" : "15px", fontWeight: "700", color: t.text, letterSpacing: "-0.02em" }}>
                                 Monitor Regulatório
                             </div>
-                            <div style={{ fontSize: "10px", color: t.textMuted, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "Arial, monospace" }}>
-                                BACEN · CVM · IASB · CPC · CFC
-                            </div>
+                            {!isMobile && (
+                                <div style={{ fontSize: "10px", color: t.textMuted, letterSpacing: "0.14em", textTransform: "uppercase", fontFamily: "Arial, monospace" }}>
+                                    BACEN · CVM · IASB · CPC · CFC
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        {novosHoje > 0 && (
-                            <div style={{
-                                display: "flex", alignItems: "center", gap: "6px",
-                                padding: "6px 12px", borderRadius: "8px",
-                                background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
-                            }}>
-                                <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#EF4444", animation: "pulse 2s infinite" }} />
-                                <span style={{ fontSize: "12px", color: "#EF4444", fontWeight: "600", fontFamily: "Arial, monospace" }}>
-                                    {novosHoje} novo{novosHoje > 1 ? "s" : ""} hoje
+                    {/* Desktop actions */}
+                    {!isMobile ? (
+                        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                            {novosHoje > 0 && (
+                                <div style={{
+                                    display: "flex", alignItems: "center", gap: "6px",
+                                    padding: "6px 12px", borderRadius: "8px",
+                                    background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)",
+                                }}>
+                                    <div style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#EF4444", animation: "pulse 2s infinite" }} />
+                                    <span style={{ fontSize: "12px", color: "#EF4444", fontWeight: "600", fontFamily: "Arial, monospace" }}>
+                                        {novosHoje} novo{novosHoje > 1 ? "s" : ""} hoje
+                                    </span>
+                                </div>
+                            )}
+                            <div style={{ padding: "6px 14px", borderRadius: "8px", background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: `1px solid ${t.border}` }}>
+                                <span style={{ fontSize: "13px", color: t.textSub, fontFamily: "Arial, monospace" }}>
+                                    <span style={{ color: t.text, fontWeight: "600" }}>{filtered.length}</span> resultados
                                 </span>
                             </div>
-                        )}
-
-                        <div style={{
-                            padding: "6px 14px", borderRadius: "8px",
-                            background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                            border: `1px solid ${t.border}`,
-                        }}>
-                            <span style={{ fontSize: "13px", color: t.textSub, fontFamily: "Arial, monospace" }}>
-                                <span style={{ color: t.text, fontWeight: "600" }}>{filtered.length}</span> resultados
-                            </span>
+                            <button onClick={exportarExcel} style={{ background: "linear-gradient(135deg, #059669, #10B981)", border: "none", borderRadius: "9px", padding: "8px 16px", cursor: "pointer", color: "#fff", fontSize: "12px", fontWeight: "700", letterSpacing: "0.06em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "8px", fontFamily: "Arial, monospace", transition: "opacity 0.15s, transform 0.15s", boxShadow: "0 4px 14px rgba(16,185,129,0.3)" }}
+                                onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}>
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3 5l3 3 3-3M1 9v1a1 1 0 001 1h8a1 1 0 001-1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                                Exportar
+                            </button>
+                            <button onClick={() => setDark(!dark)} title={dark ? "Modo claro" : "Modo escuro"} style={{ width: "38px", height: "38px", borderRadius: "10px", background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: `1px solid ${t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s", color: t.textSub, flexShrink: 0 }}
+                                onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.09)"; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"; }}>
+                                {dark ? (
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                                ) : (
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                                )}
+                            </button>
                         </div>
-
-                        <button
-                            onClick={exportarExcel}
-                            style={{
-                                background: "linear-gradient(135deg, #059669, #10B981)",
-                                border: "none", borderRadius: "9px",
-                                padding: "8px 16px", cursor: "pointer",
-                                color: "#fff", fontSize: "12px", fontWeight: "700",
-                                letterSpacing: "0.06em", textTransform: "uppercase",
-                                display: "flex", alignItems: "center", gap: "8px",
-                                fontFamily: "Arial, monospace",
-                                transition: "opacity 0.15s, transform 0.15s",
-                                boxShadow: "0 4px 14px rgba(16,185,129,0.3)",
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.opacity = "0.88"; e.currentTarget.style.transform = "translateY(-1px)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.transform = "none"; }}
-                        >
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                <path d="M6 1v7M3 5l3 3 3-3M1 9v1a1 1 0 001 1h8a1 1 0 001-1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            Exportar
-                        </button>
-
-                        {/* Dark mode toggle */}
-                        <button
-                            onClick={() => setDark(!dark)}
-                            title={dark ? "Modo claro" : "Modo escuro"}
-                            style={{
-                                width: "38px", height: "38px",
-                                borderRadius: "10px",
-                                background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)",
-                                border: `1px solid ${t.border}`,
-                                cursor: "pointer",
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                transition: "all 0.2s",
-                                color: t.textSub,
-                                flexShrink: 0,
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.09)"; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"; }}
-                        >
-                            {dark ? (
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" />
-                                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                                    <line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" />
-                                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-                                </svg>
-                            ) : (
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                                </svg>
+                    ) : (
+                        /* Mobile actions */
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                            {novosHoje > 0 && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "4px", padding: "4px 8px", borderRadius: "6px", background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                                    <div style={{ width: "5px", height: "5px", borderRadius: "50%", background: "#EF4444", animation: "pulse 2s infinite" }} />
+                                    <span style={{ fontSize: "11px", color: "#EF4444", fontWeight: "600", fontFamily: "Arial, monospace" }}>{novosHoje}</span>
+                                </div>
                             )}
-                        </button>
-                    </div>
+                            <button onClick={() => setDark(!dark)} style={{ width: "34px", height: "34px", borderRadius: "9px", background: dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)", border: `1px solid ${t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                {dark
+                                    ? <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5" /><line x1="12" y1="1" x2="12" y2="3" /><line x1="12" y1="21" x2="12" y2="23" /><line x1="4.22" y1="4.22" x2="5.64" y2="5.64" /><line x1="18.36" y1="18.36" x2="19.78" y2="19.78" /><line x1="1" y1="12" x2="3" y2="12" /><line x1="21" y1="12" x2="23" y2="12" /><line x1="4.22" y1="19.78" x2="5.64" y2="18.36" /><line x1="18.36" y1="5.64" x2="19.78" y2="4.22" /></svg>
+                                    : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.textSub} strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" /></svg>
+                                }
+                            </button>
+                            <button onClick={() => setMenuOpen(!menuOpen)} style={{ width: "34px", height: "34px", borderRadius: "9px", background: menuOpen ? (dark ? "rgba(37,99,235,0.2)" : "rgba(37,99,235,0.1)") : (dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)"), border: `1px solid ${menuOpen ? t.accent : t.border}`, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.2s" }}>
+                                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke={menuOpen ? t.accent : t.textSub} strokeWidth="1.8" strokeLinecap="round">
+                                    {menuOpen ? <><path d="M2 2l12 12M14 2L2 14" /></> : <><path d="M2 4h12M2 8h12M2 12h12" /></>}
+                                </svg>
+                            </button>
+                        </div>
+                    )}
                 </header>
 
-                <div style={{ padding: "32px 40px" }}>
+                {/* MOBILE MENU DROPDOWN */}
+                {isMobile && menuOpen && (
+                    <div style={{ background: t.surface, borderBottom: `1px solid ${t.border}`, padding: "14px 16px", animation: "slideDown 0.2s ease", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                        <span style={{ fontSize: "12px", color: t.textSub, fontFamily: "Arial, monospace" }}>
+                            <span style={{ color: t.text, fontWeight: "700" }}>{filtered.length}</span> resultados
+                        </span>
+                        <button onClick={exportarExcel} style={{ background: "linear-gradient(135deg, #059669, #10B981)", border: "none", borderRadius: "8px", padding: "8px 14px", cursor: "pointer", color: "#fff", fontSize: "12px", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px", fontFamily: "Arial, monospace", letterSpacing: "0.06em", textTransform: "uppercase", boxShadow: "0 3px 10px rgba(16,185,129,0.3)" }}>
+                            <svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M6 1v7M3 5l3 3 3-3M1 9v1a1 1 0 001 1h8a1 1 0 001-1V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                            Exportar
+                        </button>
+                    </div>
+                )}
 
-                    {/* STATS ROW */}
-                    <div style={{ display: "flex", gap: "10px", marginBottom: "28px", flexWrap: "wrap" }}>
+                <div style={{ padding: isMobile ? "20px 16px" : "32px 40px" }}>
+
+                    {/* STATS ROW — scroll horizontal no mobile */}
+                    <div style={{ display: "flex", gap: "10px", marginBottom: "28px", overflowX: "auto", paddingBottom: "4px", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
                         <StatBadge label="Total" value={stats.total} color={t.text} dark={dark} />
                         <StatBadge label="BACEN" value={stats.fontes["BACEN"] || 0} color={dark ? "#F59E0B" : "#B45309"} dark={dark} />
                         <StatBadge label="CVM" value={stats.fontes["CVM"] || 0} color={dark ? "#10B981" : "#047857"} dark={dark} />
                         <StatBadge label="IASB/ISSB" value={stats.fontes["IASB/ISSB"] || 0} color={dark ? "#60A5FA" : "#1D4ED8"} dark={dark} />
                         <StatBadge label="CPC" value={stats.fontes["CPC"] || 0} color={dark ? "#F97316" : "#C2410C"} dark={dark} />
                         <StatBadge label="CFC" value={stats.fontes["CFC"] || 0} color={dark ? "#A78BFA" : "#6D28D9"} dark={dark} />
-                        <div style={{ flex: 1 }} />
+                        {!isMobile && <div style={{ flex: 1 }} />}
                         <StatBadge label="Audiências" value={stats.cats["Audiência Pública"] || 0} color={dark ? "#F59E0B" : "#B45309"} dark={dark} />
                         <StatBadge label="Normativos" value={stats.cats["Normativo"] || 0} color={dark ? "#10B981" : "#047857"} dark={dark} />
                         <StatBadge label="Notícias" value={stats.cats["Notícia"] || 0} color={dark ? "#60A5FA" : "#1D4ED8"} dark={dark} />
@@ -492,7 +505,7 @@ export default function Home() {
                         backdropFilter: "blur(8px)",
                     }}>
                         {/* Search */}
-                        <div style={{ flex: 1, minWidth: "240px", position: "relative" }}>
+                        <div style={{ flex: 1, minWidth: isMobile ? "100%" : "240px", position: "relative" }}>
                             <svg style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
                                 width="14" height="14" viewBox="0 0 14 14" fill="none">
                                 <circle cx="6" cy="6" r="4.5" stroke={t.textMuted} strokeWidth="1.5" />
@@ -521,15 +534,7 @@ export default function Home() {
                                 }}
                             />
                             {busca && (
-                                <button
-                                    onClick={() => setBusca("")}
-                                    style={{
-                                        position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)",
-                                        background: "none", border: "none", cursor: "pointer",
-                                        color: t.textMuted, fontSize: "14px", padding: "2px 4px",
-                                        borderRadius: "4px",
-                                    }}
-                                >✕</button>
+                                <button onClick={() => setBusca("")} style={{ position: "absolute", right: "10px", top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: t.textMuted, fontSize: "14px", padding: "2px 4px", borderRadius: "4px" }}>✕</button>
                             )}
                         </div>
 
@@ -565,6 +570,7 @@ export default function Home() {
                                     fontFamily: "Arial, monospace", letterSpacing: "0.06em",
                                     transition: "all 0.15s", whiteSpace: "nowrap",
                                     display: "flex", alignItems: "center", gap: "6px",
+                                    width: isMobile ? "100%" : "auto", justifyContent: "center",
                                 }}
                                 onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.14)"}
                                 onMouseLeave={e => e.currentTarget.style.background = "rgba(239,68,68,0.08)"}
@@ -581,7 +587,7 @@ export default function Home() {
                     {paginados.length > 0 ? (
                         <div className="card-grid" style={{
                             display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
+                            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(340px, 1fr))",
                             gap: "16px",
                         }}>
                             {paginados.map((n) => {
@@ -603,14 +609,18 @@ export default function Home() {
                                             boxShadow: dark ? "none" : "0 1px 6px rgba(0,0,0,0.04)",
                                         }}
                                         onMouseEnter={e => {
-                                            e.currentTarget.style.borderColor = t.cardHoverBorder;
-                                            e.currentTarget.style.transform = "translateY(-3px)";
-                                            e.currentTarget.style.boxShadow = t.shadowHover;
+                                            if (!isMobile) {
+                                                e.currentTarget.style.borderColor = t.cardHoverBorder;
+                                                e.currentTarget.style.transform = "translateY(-3px)";
+                                                e.currentTarget.style.boxShadow = t.shadowHover;
+                                            }
                                         }}
                                         onMouseLeave={e => {
-                                            e.currentTarget.style.borderColor = t.border;
-                                            e.currentTarget.style.transform = "translateY(0)";
-                                            e.currentTarget.style.boxShadow = dark ? "none" : "0 1px 6px rgba(0,0,0,0.04)";
+                                            if (!isMobile) {
+                                                e.currentTarget.style.borderColor = t.border;
+                                                e.currentTarget.style.transform = "translateY(0)";
+                                                e.currentTarget.style.boxShadow = dark ? "none" : "0 1px 6px rgba(0,0,0,0.04)";
+                                            }
                                         }}
                                     >
                                         {/* Accent top bar */}
@@ -629,7 +639,6 @@ export default function Home() {
                                                 color: fonteColor, background: `${fonteColor}14`, border: `1px solid ${fonteColor}30`,
                                                 fontFamily: "Arial, monospace",
                                             }}>{n.fonte}</span>
-
                                             {n.categoria && (
                                                 <span style={{
                                                     fontSize: "10px", fontWeight: "700", letterSpacing: "0.1em",
@@ -638,7 +647,6 @@ export default function Home() {
                                                     fontFamily: "Arial, monospace",
                                                 }}>{n.categoria}</span>
                                             )}
-
                                             {isNovo(n.data) && (
                                                 <span style={{
                                                     fontSize: "10px", fontWeight: "700", letterSpacing: "0.1em",
@@ -671,14 +679,11 @@ export default function Home() {
                                             display: "flex", justifyContent: "space-between", alignItems: "center",
                                             paddingTop: "14px", borderTop: `1px solid ${t.border}`,
                                         }}>
-                                            <span style={{
-                                                fontSize: "11px", color: t.textMuted,
-                                                fontFamily: "Arial, monospace",
-                                            }}>{new Date(n.data).toLocaleDateString("pt-BR")}</span>
-
+                                            <span style={{ fontSize: "11px", color: t.textMuted, fontFamily: "Arial, monospace" }}>
+                                                {new Date(n.data).toLocaleDateString("pt-BR")}
+                                            </span>
                                             {n.link && (
-                                                <a
-                                                    href={n.link} target="_blank" rel="noreferrer"
+                                                <a href={n.link} target="_blank" rel="noreferrer"
                                                     onClick={(e) => e.stopPropagation()}
                                                     style={{
                                                         fontSize: "11px", fontWeight: "700",
@@ -703,94 +708,37 @@ export default function Home() {
                             })}
                         </div>
                     ) : (
-                        <div style={{
-                            textAlign: "center", padding: "80px 20px",
-                            color: t.textMuted,
-                        }}>
-                            <div style={{
-                                width: "64px", height: "64px", borderRadius: "16px",
-                                background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-                                border: `1px solid ${t.border}`,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                margin: "0 auto 16px",
-                                fontSize: "28px",
-                            }}>◎</div>
-                            <div style={{ fontSize: "14px", color: t.textSub, fontWeight: "500", marginBottom: "6px" }}>
-                                Nenhum normativo encontrado
-                            </div>
-                            <div style={{ fontSize: "12px", color: t.textMuted, fontFamily: "Arial, monospace" }}>
-                                Tente ajustar os filtros selecionados
-                            </div>
+                        <div style={{ textAlign: "center", padding: "80px 20px", color: t.textMuted }}>
+                            <div style={{ width: "64px", height: "64px", borderRadius: "16px", background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)", border: `1px solid ${t.border}`, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px", fontSize: "28px" }}>◎</div>
+                            <div style={{ fontSize: "14px", color: t.textSub, fontWeight: "500", marginBottom: "6px" }}>Nenhum normativo encontrado</div>
+                            <div style={{ fontSize: "12px", color: t.textMuted, fontFamily: "Arial, monospace" }}>Tente ajustar os filtros selecionados</div>
                         </div>
                     )}
 
                     {/* PAGINATION */}
                     {totalPaginas > 1 && (
-                        <div style={{
-                            display: "flex", justifyContent: "center", alignItems: "center",
-                            gap: "6px", marginTop: "40px",
-                        }}>
-                            <button
-                                onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                                disabled={pagina === 1}
-                                style={{
-                                    padding: "8px 16px", borderRadius: "9px",
-                                    background: t.surface,
-                                    border: `1px solid ${t.border}`,
-                                    color: pagina === 1 ? t.textMuted : t.textSub,
-                                    fontSize: "12px", cursor: pagina === 1 ? "default" : "pointer",
-                                    fontFamily: "Arial, monospace",
-                                    transition: "all 0.15s",
-                                    opacity: pagina === 1 ? 0.4 : 1,
-                                    boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
-                                }}
-                            >← Anterior</button>
+                        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", marginTop: "40px", flexWrap: "wrap" }}>
+                            <button onClick={() => setPagina((p) => Math.max(1, p - 1))} disabled={pagina === 1}
+                                style={{ padding: "8px 16px", borderRadius: "9px", background: t.surface, border: `1px solid ${t.border}`, color: pagina === 1 ? t.textMuted : t.textSub, fontSize: "12px", cursor: pagina === 1 ? "default" : "pointer", fontFamily: "Arial, monospace", transition: "all 0.15s", opacity: pagina === 1 ? 0.4 : 1, boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)" }}>← Anterior</button>
 
                             {paginas.map((p, idx) =>
                                 p === "..." ? (
                                     <span key={`e-${idx}`} style={{ color: t.textMuted, padding: "0 4px", fontFamily: "Arial, monospace" }}>…</span>
                                 ) : (
-                                    <button
-                                        key={p}
-                                        onClick={() => setPagina(p)}
-                                        style={{
-                                            width: "36px", height: "36px", borderRadius: "9px",
-                                            background: pagina === p ? t.paginationActiveBg : t.surface,
-                                            border: pagina === p ? "none" : `1px solid ${t.border}`,
-                                            color: pagina === p ? "#fff" : t.textSub,
-                                            fontSize: "12px", cursor: "pointer",
-                                            fontFamily: "Arial, monospace", fontWeight: "600",
-                                            transition: "all 0.15s",
-                                            boxShadow: pagina === p ? "0 4px 14px rgba(37,99,235,0.3)" : (dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)"),
-                                        }}
-                                    >{p}</button>
+                                    <button key={p} onClick={() => setPagina(p)}
+                                        style={{ width: "36px", height: "36px", borderRadius: "9px", background: pagina === p ? t.paginationActiveBg : t.surface, border: pagina === p ? "none" : `1px solid ${t.border}`, color: pagina === p ? "#fff" : t.textSub, fontSize: "12px", cursor: "pointer", fontFamily: "Arial, monospace", fontWeight: "600", transition: "all 0.15s", boxShadow: pagina === p ? "0 4px 14px rgba(37,99,235,0.3)" : (dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)") }}>
+                                        {p}
+                                    </button>
                                 )
                             )}
 
-                            <button
-                                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                                disabled={pagina === totalPaginas}
-                                style={{
-                                    padding: "8px 16px", borderRadius: "9px",
-                                    background: t.surface,
-                                    border: `1px solid ${t.border}`,
-                                    color: pagina === totalPaginas ? t.textMuted : t.textSub,
-                                    fontSize: "12px", cursor: pagina === totalPaginas ? "default" : "pointer",
-                                    fontFamily: "Arial, monospace",
-                                    transition: "all 0.15s",
-                                    opacity: pagina === totalPaginas ? 0.4 : 1,
-                                    boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)",
-                                }}
-                            >Próxima →</button>
+                            <button onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))} disabled={pagina === totalPaginas}
+                                style={{ padding: "8px 16px", borderRadius: "9px", background: t.surface, border: `1px solid ${t.border}`, color: pagina === totalPaginas ? t.textMuted : t.textSub, fontSize: "12px", cursor: pagina === totalPaginas ? "default" : "pointer", fontFamily: "Arial, monospace", transition: "all 0.15s", opacity: pagina === totalPaginas ? 0.4 : 1, boxShadow: dark ? "none" : "0 1px 3px rgba(0,0,0,0.05)" }}>Próxima →</button>
                         </div>
                     )}
 
                     {/* FOOTER */}
-                    <div style={{
-                        marginTop: "60px", paddingTop: "24px",
-                        borderTop: `1px solid ${t.border}`,
-                        display: "flex", justifyContent: "space-between", alignItems: "center",
-                    }}>
+                    <div style={{ marginTop: "60px", paddingTop: "24px", borderTop: `1px solid ${t.border}`, display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
                         <span style={{ fontSize: "11px", color: t.textMuted, fontFamily: "Arial, monospace", letterSpacing: "0.1em" }}>
                             MONITOR REGULATÓRIO · Atualizado diariamente
                         </span>
